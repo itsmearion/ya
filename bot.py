@@ -3,12 +3,12 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 import sqlite3
 
-API_ID = 12345678  # Ganti dengan API ID kamu
-API_HASH = "your_api_hash"
-BOT_TOKEN = "your_bot_token"
+API_ID = 29386534  # Ganti dengan API ID kamu
+API_HASH = "8f35dec4c4de801ec648cf4ca1cf04e9"
+BOT_TOKEN = "7766823813:AAHOtLoVip5vxtKbwly1kt3JTX7FwN1Ko_M"
 
-ADMIN_IDS = [1355077923, 1407585501]  # Ganti dengan ID admin
-LOG_CHANNEL = -1001234567890  # Ganti dengan ID channel log
+ADMIN_IDS = [6467919046, 1407585501]  # Ganti dengan ID admin
+LOG_CHANNEL = -1002220134973  # Ganti dengan ID channel log
 
 db = sqlite3.connect("database.db")
 c = db.cursor()
