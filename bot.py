@@ -287,4 +287,16 @@ async def main():
         await client.run_until_disconnected()
     except KeyboardInterrupt:
         logger.info("Userbot dihentikan oleh pengguna")
-    except Exception as
+    except Exception as e:
+        logger.error(f"Error utama: {str(e)}")
+
+# Jalankan program
+if __name__ == "__main__":
+    try:
+        # Gunakan asyncio untuk menjalankan program utama
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Program dihentikan oleh pengguna")
+    except Exception as e:
+        logger.error(f"Error saat menjalankan program: {str(e)}")
+        sys.exit(1)
