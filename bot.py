@@ -1,6 +1,6 @@
 import logging
 import traceback
-from pyrogram import Client
+from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from datetime import datetime
 
@@ -32,29 +32,32 @@ async def handle_error(client, message, error):
     logging.error(f"{error_message}\n{traceback.format_exc()}")
     # Mengirimkan error ke channel log
     await send_error_log(f"Error terjadi pada {datetime.now()}\nUser: {message.from_user.id if message else 'Unknown'}\nPesan: {message.text if message else 'No message'}\n{error_message}")
-    
-# Menangkap error pada callback query atau pesan yang masuk
-@bot.on_message()
-async def error_handler(client, message):
+
+# Menangani FloodWait secara manual
+async def handle_flood_wait(exception: FloodWait):
+    await send_error_log(f"FloodWait exception occurred at {datetime.now()}\nException: {exception}")
+    logging.error(f"FloodWait occurred at {datetime.now()}\n{traceback.format_exc()}")
+
+# Handler untuk pesan dan callback query
+@bot.on_message(filters.command("start"))
+async def start(client, message):
     try:
-        # Tempatkan kode bot di sini
-        pass  # Ganti dengan logika bot yang kamu implementasikan
+        # Tempatkan kode bot kamu di sini
+        pass
+    except FloodWait as e:
+        await handle_flood_wait(e)
     except Exception as e:
         await handle_error(client, message, e)
 
 @bot.on_callback_query()
-async def callback_error_handler(client, callback_query):
+async def callback_handler(client, callback_query):
     try:
-        # Tempatkan kode callback yang kamu implementasikan
-        pass  # Ganti dengan logika callback yang kamu implementasikan
+        # Tempatkan kode callback kamu di sini
+        pass
+    except FloodWait as e:
+        await handle_flood_wait(e)
     except Exception as e:
         await handle_error(client, callback_query.message, e)
-
-# Menangani FloodWait (misalnya bot dibatasi untuk mengirim pesan)
-@bot.on_exception(FloodWait)
-async def handle_flood_wait(client, exception):
-    await send_error_log(f"FloodWait exception occurred at {datetime.now()}\nException: {exception}")
-    logging.error(f"FloodWait occurred at {datetime.now()}\n{traceback.format_exc()}")
 
 # Menjalankan bot
 bot.run()
