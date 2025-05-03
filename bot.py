@@ -1,157 +1,153 @@
-#!/usr/bin/env python
-# Bot Telegram untuk memblokir user yang keluar dari channel
-# Menggunakan python-telegram-bot
-
+from telethon import TelegramClient, events
+from telethon.tl.functions.channels import EditBannedRequest
+from telethon.tl.types import ChatBannedRights, PeerUser, PeerChannel
+from telethon.errors import UserAdminInvalidError, ChatAdminRequiredError
+import asyncio
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+import time
 
 # Konfigurasi logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Ganti dengan token bot Anda dari BotFather
-BOT_TOKEN = "7659666747:AAHyfrRHzJg2GuyaN3f-RZs94ABHr4rPFXo"
+# Ganti dengan API ID & HASH dari https://my.telegram.org
+api_id = 12345678
+api_hash = 'your_api_hash'
 
-# Simpan daftar channel yang dimonitor
-monitored_channels = set()
+# Konfigurasi channel yang ingin dipantau
+MONITORED_CHANNELS = ['@channelkamu']  # Gunakan username atau ID channel
+ADMINS = [123456789, 987654321]  # Daftar ID admin yang akan menerima laporan
 
-# Menyimpan username admin untuk verifikasi
-admin_username = "m4thewn"
+# Pesan yang akan dikirim ke admin
+BAN_MESSAGE = "⚠️ OTOMATIS BANNED ⚠️\nPengguna {user_mention} ({user_id}) telah keluar dari channel dan otomatis dibanned."
 
-# Command /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(
-        "Selamat datang di Leave Blocker Bot! Bot ini akan memblokir user yang keluar dari channel Anda.\n\n"
-        "Perintah yang tersedia:\n"
-        "/setadmin [username] - Mengatur admin bot\n"
-        "/monitor [channel_id] - Mulai memantau channel\n"
-        "/unmonitor [channel_id] - Berhenti memantau channel\n"
-        "/list - Menampilkan daftar channel yang dipantau"
-    )
+client = TelegramClient('userbot_autoban', api_id, api_hash)
 
-# Fungsi untuk verifikasi admin
-def is_admin(update: Update) -> bool:
-    global admin_username
-    
-    if not admin_username:
-        update.message.reply_text("Admin belum diatur. Gunakan /setadmin [username] terlebih dahulu.")
-        return False
-    
-    sender = update.message.from_user.username
-    if sender != admin_username:
-        update.message.reply_text("Hanya admin yang bisa menggunakan perintah ini.")
-        return False
-    
-    return True
+# Hak blokir permanen
+ban_rights = ChatBannedRights(
+    until_date=None,  # Selamanya
+    view_messages=True,
+    send_messages=True,
+    send_media=True,
+    send_stickers=True,
+    send_gifs=True,
+    send_games=True,
+    send_inline=True,
+    embed_links=True
+)
 
-# Command /setadmin
-async def set_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    global admin_username
-    
-    if not context.args or len(context.args) < 1:
-        await update.message.reply_text("Gunakan format: /setadmin [username]")
+@client.on(events.ChatAction)
+async def autoban_handler(event):
+    # Cek apakah event adalah pengguna keluar
+    if not (event.user_left or event.user_kicked):
         return
-    
-    admin_username = context.args[0].replace("@", "")
-    await update.message.reply_text(f"Admin bot diatur ke: @{admin_username}")
-
-# Command /monitor
-async def monitor_channel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not is_admin(update):
-        return
-    
-    if not context.args or len(context.args) < 1:
-        await update.message.reply_text("Gunakan format: /monitor [channel_id]")
-        return
-    
-    channel_id = context.args[0]
     
     try:
-        # Verifikasi bot adalah admin di channel
-        chat_member = await context.bot.get_chat_member(chat_id=channel_id, user_id=context.bot.id)
+        # Ambil informasi chat dan user
+        chat = await event.get_chat()
+        user = await event.get_user()
         
-        if chat_member.status not in ['administrator', 'creator']:
-            await update.message.reply_text("Bot harus menjadi admin di channel dengan izin memblokir user")
+        # Verifikasi chat adalah channel yang dipantau
+        chat_identifier = '@' + chat.username if chat.username else str(chat.id)
+        if chat_identifier not in MONITORED_CHANNELS:
             return
         
-        monitored_channels.add(channel_id)
-        await update.message.reply_text(f"Channel {channel_id} sekarang dipantau. Bot akan memblokir user yang keluar.")
-    except Exception as e:
-        await update.message.reply_text(f"Error: {str(e)}. Pastikan bot sudah dimasukkan ke channel dan menjadi admin.")
-
-# Command /unmonitor
-async def unmonitor_channel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not is_admin(update):
-        return
-    
-    if not context.args or len(context.args) < 1:
-        await update.message.reply_text("Gunakan format: /unmonitor [channel_id]")
-        return
-    
-    channel_id = context.args[0]
-    
-    if channel_id in monitored_channels:
-        monitored_channels.remove(channel_id)
-        await update.message.reply_text(f"Channel {channel_id} tidak lagi dipantau.")
-    else:
-        await update.message.reply_text(f"Channel {channel_id} tidak ada dalam daftar pantauan.")
-
-# Command /list
-async def list_channels(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not is_admin(update):
-        return
-    
-    if not monitored_channels:
-        await update.message.reply_text("Tidak ada channel yang dipantau saat ini.")
-        return
-    
-    message = "Channel yang sedang dipantau:\n"
-    for channel in monitored_channels:
-        message += f"- {channel}\n"
-    
-    await update.message.reply_text(message)
-
-# Menangani event saat user keluar dari channel
-async def handle_left_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    chat_id = str(update.effective_chat.id)
-    
-    # Cek apakah channel ada dalam daftar pantauan
-    if chat_id in monitored_channels:
-        user = update.message.left_chat_member
+        # Jangan blokir diri sendiri
+        me = await client.get_me()
+        if user.id == me.id:
+            return
         
-        # Jika yang keluar bukan bot itu sendiri
-        if user.id != context.bot.id:
-            try:
-                # Blokir user yang keluar
-                await context.bot.ban_chat_member(chat_id=chat_id, user_id=user.id)
-                
-                # Kirim notifikasi
-                username = user.username or user.id
-                await update.effective_chat.send_message(f"User @{username} telah keluar dari channel dan diblokir.")
-            except Exception as e:
-                await update.effective_chat.send_message(f"Gagal memblokir user: {str(e)}")
+        # Dapatkan waktu saat ini untuk log
+        ban_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Ban pengguna
+        try:
+            await client(EditBannedRequest(
+                channel=chat,
+                participant=user.id,
+                banned_rights=ban_rights
+            ))
+            
+            logger.info(f"✅ [{ban_time}] Berhasil banned pengguna {user.first_name} (ID: {user.id}) dari {chat.title}")
+            
+            # Buat mention pengguna
+            user_mention = f"[{user.first_name}](tg://user?id={user.id})" if user.first_name else f"User {user.id}"
+            
+            # Siapkan pesan untuk admin
+            ban_report = BAN_MESSAGE.format(user_mention=user_mention, user_id=user.id)
+            
+            # Kirim laporan ke semua admin
+            for admin_id in ADMINS:
+                try:
+                    await client.send_message(admin_id, ban_report, parse_mode='markdown')
+                    logger.info(f"✅ Laporan banned berhasil dikirim ke admin {admin_id}")
+                except Exception as e:
+                    logger.error(f"❌ Gagal mengirim laporan ke admin {admin_id}: {str(e)}")
+                    
+        except UserAdminInvalidError:
+            logger.warning(f"❌ Tidak dapat banned {user.first_name} (ID: {user.id}) karena mereka admin")
+            
+        except ChatAdminRequiredError:
+            logger.error(f"❌ Tidak dapat banned {user.first_name} (ID: {user.id}) karena userbot bukan admin")
+            
+        except Exception as e:
+            logger.error(f"❌ Gagal banned {user.first_name} (ID: {user.id}): {str(e)}")
+            
+    except Exception as e:
+        logger.error(f"❌ Error dalam handler: {str(e)}")
 
-def main() -> None:
-    # Buat aplikasi
-    application = Application.builder().token(BOT_TOKEN).build()
-
-    # Tambahkan handler untuk commands
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("setadmin", set_admin))
-    application.add_handler(CommandHandler("monitor", monitor_channel))
-    application.add_handler(CommandHandler("unmonitor", unmonitor_channel))
-    application.add_handler(CommandHandler("list", list_channels))
+async def check_permissions():
+    """Memeriksa apakah userbot memiliki izin yang diperlukan di semua channel yang dipantau"""
+    me = await client.get_me()
+    logger.info(f"Userbot berjalan sebagai {me.first_name} (ID: {me.id})")
     
-    # Tambahkan handler untuk event user keluar
-    application.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_left_chat_member))
+    for channel_id in MONITORED_CHANNELS:
+        try:
+            # Hapus @ jika ada di depan username
+            if channel_id.startswith('@'):
+                channel = await client.get_entity(channel_id)
+            else:
+                channel = await client.get_entity(int(channel_id))
+                
+            # Cek apakah userbot adalah admin
+            participant = await client.get_permissions(channel, me.id)
+            if participant.is_admin:
+                logger.info(f"✅ Userbot adalah admin di {channel.title}")
+                if participant.ban_users:
+                    logger.info(f"✅ Userbot memiliki izin ban di {channel.title}")
+                else:
+                    logger.warning(f"⚠️ Userbot tidak memiliki izin ban di {channel.title}")
+            else:
+                logger.warning(f"⚠️ Userbot bukan admin di {channel.title}. Ban tidak akan berfungsi!")
+                
+        except Exception as e:
+            logger.error(f"❌ Gagal memeriksa izin untuk {channel_id}: {str(e)}")
 
-    # Mulai bot
-    logger.info("Bot telah dimulai")
-    application.run_polling()
+@client.on(events.NewMessage(pattern=r'\.status'))
+async def status_handler(event):
+    """Menampilkan status userbot ketika perintah .status dikirim"""
+    if event.is_private:  # Hanya berfungsi di chat pribadi
+        sender = await event.get_sender()
+        if sender.id in ADMINS:
+            await event.respond("✅ **Userbot AutoBan aktif dan berjalan!**\n"
+                              f"Memantau channel: {', '.join(MONITORED_CHANNELS)}\n"
+                              f"Admin yang dilaporkan: {len(ADMINS)} orang")
+
+async def main():
+    await client.start()
+    
+    # Periksa izin saat startup
+    await check_permissions()
+    
+    # Pesan konfirmasi bahwa userbot berjalan
+    logger.info("====================================")
+    logger.info("🤖 Userbot AutoBan berhasil dijalankan!")
+    logger.info(f"🔍 Memantau {len(MONITORED_CHANNELS)} channel")
+    logger.info(f"👮 Laporan akan dikirim ke {len(ADMINS)} admin")
+    logger.info("====================================")
+    
+    # Jalankan userbot sampai terputus
+    await client.run_until_disconnected()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
