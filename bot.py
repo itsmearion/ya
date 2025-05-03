@@ -28,7 +28,6 @@ BOT_TOKEN = "7766823813:AAHOtLoVip5vxtKbwly1kt3JTX7FwN1Ko_M"
 # ID Admin dan Channel Log
 ADMIN_IDS = [6467919046, 1407585501]  # Ganti dengan ID admin
 LOG_CHANNEL = -1002220134973  # Ganti dengan ID channel log
-
 # Direktori untuk menyimpan cache gambar dan file sementara
 CACHE_DIR = "cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -665,4 +664,9 @@ async def tambah_produk(client, message: Message):
         deskripsi = parts[1]
         harga = parts[2]
         delivery = parts[3] if len(parts) > 3 else ""
-        image = parts[4]
+        image = parts[4] if len(parts) > 4 else ""
+        
+        # Tambahkan produk ke database
+        product_id = db.add_product(nama, deskripsi, harga, delivery, image)
+        
+        logger.info(f"
