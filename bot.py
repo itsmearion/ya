@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = "7659666747:AAHyfrRHzJg2GuyaN3f-RZs94ABHr4rPFXo"
 
 # Simpan daftar channel yang dimonitor
-monitored_channels = set(testerbott4)
+monitored_channels = set()
 
 # Menyimpan username admin untuk verifikasi
 admin_username = "m4thewn"
