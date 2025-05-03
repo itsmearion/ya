@@ -7,7 +7,7 @@ from datetime import datetime
 # Konfigurasi logging
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.ERROR,
+    level=logging.DEBUG,  # Mengubah level menjadi DEBUG agar bisa melihat log lebih banyak
     handlers=[
         logging.FileHandler("bot_errors.log"),
         logging.StreamHandler()
@@ -42,6 +42,7 @@ async def handle_flood_wait(exception: FloodWait):
 @bot.on_message(filters.command("start"))
 async def start(client, message):
     try:
+        logging.debug("Start command received")  # Log untuk debugging
         # Tempatkan kode bot kamu di sini
         pass
     except FloodWait as e:
@@ -52,6 +53,7 @@ async def start(client, message):
 @bot.on_callback_query()
 async def callback_handler(client, callback_query):
     try:
+        logging.debug("Callback query received")  # Log untuk debugging
         # Tempatkan kode callback kamu di sini
         pass
     except FloodWait as e:
@@ -60,4 +62,5 @@ async def callback_handler(client, callback_query):
         await handle_error(client, callback_query.message, e)
 
 # Menjalankan bot
+logging.debug("Bot is starting...")
 bot.run()
