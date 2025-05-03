@@ -269,8 +269,8 @@ async def main():
         
         # Pesan konfirmasi bahwa userbot berjalan
         logger.info("====================================")
-        logger.info("🤖 Userbot AutoBan berhasil dijalankan!")
-        logger.info(f"🔍 Memantau {len(MONITORED_CHANNELS)} channel")
+        logger.info("🤖 Calbin kontol dijalankan!")
+        logger.info(f"🔍 Miel anj, babi, tai {len(MONITORED_CHANNELS)} channel")
         logger.info(f"👮 Laporan akan dikirim ke {len(ADMINS)} admin")
         logger.info("====================================")
         
