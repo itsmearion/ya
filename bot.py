@@ -46,7 +46,7 @@ bot = Client("digital_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKE
 
 @bot.on_message(filters.command("start"))
 async def start(client, message: Message):
-    c.execute("SELECT id, name FROM products")
+  c.execute("SELECT id, name FROM products")
     rows = c.fetchall()
     if not rows:
         await message.reply("Belum ada produk tersedia.")
