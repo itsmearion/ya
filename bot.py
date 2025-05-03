@@ -1,8 +1,3 @@
-
-API_ID = 29386534  # Ganti dengan API ID kamu
-API_HASH = "8f35dec4c4de801ec648cf4ca1cf04e9"
-BOT_TOKEN = "7766823813:AAHOtLoVip5vxtKbwly1kt3JTX7FwN1Ko_M"
-LOG_CHANNEL = -1001234567890  # Ganti dengan ID channel log
 import asyncio
 import logging
 import os
