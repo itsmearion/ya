@@ -11,12 +11,12 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # Ganti dengan API ID & HASH dari https://my.telegram.org
-api_id = 12345678
-api_hash = 'your_api_hash'
+api_id = 29386534
+api_hash = '8f35dec4c4de801ec648cf4ca1cf04e9'
 
 # Konfigurasi channel yang ingin dipantau
-MONITORED_CHANNELS = ['@channelkamu']  # Gunakan username atau ID channel
-ADMINS = [123456789, 987654321]  # Daftar ID admin yang akan menerima laporan
+MONITORED_CHANNELS = ['@testerbott4']  # Gunakan username atau ID channel
+ADMINS = [6467919046, 987654321]  # Daftar ID admin yang akan menerima laporan
 
 # Pesan yang akan dikirim ke admin
 BAN_MESSAGE = "⚠️ OTOMATIS BANNED ⚠️\nPengguna {user_mention} ({user_id}) telah keluar dari channel dan otomatis dibanned."
