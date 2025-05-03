@@ -1,7 +1,8 @@
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, version
 from telethon.tl.functions.channels import EditBannedRequest
 from telethon.tl.types import ChatBannedRights, PeerUser, PeerChannel
-from telethon.errors import UserAdminInvalidError, ChatAdminRequiredError
+from telethon.errors import UserAdminInvalidError, ChatAdminRequiredError, AuthKeyError
+import sys
 import asyncio
 import logging
 import time
@@ -21,7 +22,15 @@ ADMINS = [6467919046, 987654321]  # Daftar ID admin yang akan menerima laporan
 # Pesan yang akan dikirim ke admin
 BAN_MESSAGE = "⚠️ OTOMATIS BANNED ⚠️\nPengguna {user_mention} ({user_id}) telah keluar dari channel dan otomatis dibanned."
 
-client = TelegramClient('userbot_autoban', api_id, api_hash)
+# Inisialisasi client dengan parameter tambahan untuk menangani error UPDATE_APP_TO_LOGIN
+client = TelegramClient(
+    'userbot_autoban', 
+    api_id, 
+    api_hash,
+    device_model="Termux Python",  # Membantu identifikasi device
+    system_version=f"Python {sys.version.split()[0]}",  # Versi Python
+    app_version=f"Telethon {version.__version__}"  # Versi Telethon
+)
 
 # Hak blokir permanen
 ban_rights = ChatBannedRights(
